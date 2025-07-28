@@ -38,7 +38,7 @@ export class WebsocketGateway
     console.log('data: ', data instanceof  WebsocketDto)
     const message: Message = {
       sender: client.id, // 自动填充发送方 ID
-      message: data.message,
+      message: data,
       timestamp: Date.now(),
     }
 

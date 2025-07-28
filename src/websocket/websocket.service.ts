@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { WebsocketDto } from './dto/websocket.dto'
 
-export interface Message {
+export type Message = {
   sender: string;
-  message: string;
+  message: WebsocketDto;
   timestamp: number;
 }
 
