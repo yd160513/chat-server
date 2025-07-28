@@ -4,14 +4,16 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  WebSocketServer,
+  WebSocketServer, ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Message, WebsocketService } from './websocket.service';
-import { CreateWebsocketDto } from './dto/create-websocket.dto';
-import { UpdateWebsocketDto } from './dto/update-websocket.dto';
+import { WebsocketDto } from './dto/websocket.dto';
+import { UseFilters, ValidationPipe } from '@nestjs/common';
+import { WebsocketFilter } from './exceptionFilter/websocket.filter'
 
 @WebSocketGateway()
+@UseFilters(WebsocketFilter)
 export class WebsocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -29,12 +31,14 @@ export class WebsocketGateway
   }
 
   @SubscribeMessage('sendMessage')
-  // { sender: string; message: string }
-  // TODO: 消息体验证
-  handleSendMessage(@MessageBody() data) {
+  handleSendMessage(
+    @MessageBody(new ValidationPipe({ transform: false })) data: WebsocketDto,
+    @ConnectedSocket() client: Socket
+    ) {
+    console.log('data: ', data instanceof  WebsocketDto)
     const message: Message = {
-      sender: '', // TODO: 根据消息发送方自动填充 sender，而不是通过用户传入
-      message: data,
+      sender: client.id, // 自动填充发送方 ID
+      message: data.message,
       timestamp: Date.now(),
     }
 
@@ -49,11 +53,6 @@ export class WebsocketGateway
     return { success: true };
   }
 
-  @SubscribeMessage('createWebsocket')
-  create(@MessageBody() createWebsocketDto: CreateWebsocketDto) {
-    return this.websocketService.create(createWebsocketDto);
-  }
-
   @SubscribeMessage('findAllWebsocket')
   findAll() {
     return this.websocketService.findAll();
@@ -62,14 +61,6 @@ export class WebsocketGateway
   @SubscribeMessage('findOneWebsocket')
   findOne(@MessageBody() id: number) {
     return this.websocketService.findOne(id);
-  }
-
-  @SubscribeMessage('updateWebsocket')
-  update(@MessageBody() updateWebsocketDto: UpdateWebsocketDto) {
-    return this.websocketService.update(
-      updateWebsocketDto.id,
-      updateWebsocketDto,
-    );
   }
 
   @SubscribeMessage('removeWebsocket')
